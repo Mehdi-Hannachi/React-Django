@@ -1,175 +1,154 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "./components/Modal";
-import axios from 'axios';  
+import axios from "axios";
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      viewCompleted: false,
-      activeItem: {
-        title: "",
-        description: "",
-        completed: false
-      },
-      taskList: [] 
-    };
-  }
+const App = () => {
+  const [viewCompleted, setViewCompleted] = useState(false);
+  const [activeItem, setActiveItem] = useState({
+    title: "",
+    description: "",
+    completed: false,
+  });
+  const [taskList, setTaskList] = useState([]);
+  const [modal, setModal] = useState(false);
 
-  // Add componentDidMount()
-  componentDidMount() {
-    this.refreshList();
-  }
-
- 
-  refreshList = () => {
-    axios   //Axios to send and receive HTTP requests
+  const refreshList = () => {
+    axios //Axios to send and receive HTTP requests
       .get("http://localhost:8000/api/tasks/")
-      .then(res => this.setState({ taskList: res.data }))
-      .catch(err => console.log(err));
+      .then((res) => setTaskList(res.data))
+      .catch((err) => console.log(err));
   };
 
+  useEffect(() => {
+    refreshList();
+  }, []);
 
-  displayCompleted = status => {
+  const displayCompleted = (status) => {
     if (status) {
-      return this.setState({ viewCompleted: true });
+      return setViewCompleted(true);
     }
-    return this.setState({ viewCompleted: false });
+    return setViewCompleted(false);
   };
 
-
-  renderTabList = () => {
+  const renderTabList = () => {
     return (
       <div className="my-5 tab-list">
         <span
-          onClick={() => this.displayCompleted(true)}
-          className={this.state.viewCompleted ? "active" : ""}
+          onClick={() => displayCompleted(true)}
+          className={viewCompleted ? "active" : ""}
         >
           completed
-            </span>
+        </span>
         <span
-          onClick={() => this.displayCompleted(false)}
-          className={this.state.viewCompleted ? "" : "active"}
+          onClick={() => displayCompleted(false)}
+          className={viewCompleted ? "" : "active"}
         >
           Incompleted
-            </span>
+        </span>
       </div>
     );
   };
 
   // Main variable to render items on the screen
-  renderItems = () => {
-    const { viewCompleted } = this.state;
-    const newItems = this.state.taskList.filter(
-      item => item.completed === viewCompleted
+  const renderItems = () => {
+    const newItems = taskList.filter(
+      (item) => item.completed === viewCompleted
     );
-    return newItems.map(item => (
+    return newItems.map((item) => (
       <li
         key={item.id}
         className="list-group-item d-flex justify-content-between align-items-center"
       >
         <span
-          className={`todo-title mr-2 ${this.state.viewCompleted ? "completed-todo" : ""
-            }`}
+          className={`todo-title mr-2 ${viewCompleted ? "completed-todo" : ""}`}
           title={item.description}
         >
           {item.title}
         </span>
         <span>
           <button
-            onClick={() => this.editItem(item)}
+            onClick={() => editItem(item)}
             className="btn btn-secondary mr-2"
           >
             Edit
           </button>
-          <button
-            onClick={() => this.handleDelete(item)}
-            className="btn btn-danger"
-          >
+          <button onClick={() => handleDelete(item)} className="btn btn-danger">
             Delete
           </button>
         </span>
       </li>
     ));
   };
-  // ///////////////////////////////////////////////////////////
 
   ////add this after modal creation
-  toggle = () => {//add this after modal creation
-    this.setState({ modal: !this.state.modal });//add this after modal creation
+  const toggle = () => {
+    //add this after modal creation
+    setModal(!modal);
   };
-  // handleSubmit = item => {//add this after modal creation
-  //   this.toggle();//add this after modal creation
-  //   alert("save" + JSON.stringify(item));//add this after modal creation
-  // };
 
   // Submit an item
-  handleSubmit = item => {
-    this.toggle();
+  const handleSubmit = (item) => {
+    toggle();
     if (item.id) {
       // if old post to edit and submit
       axios
         .put(`http://localhost:8000/api/tasks/${item.id}/`, item)
-        .then(res => this.refreshList());
+        .then((res) => refreshList());
       return;
     }
     // if new post to submit
     axios
       .post("http://localhost:8000/api/tasks/", item)
-      .then(res => this.refreshList());
+      .then((res) => refreshList());
   };
 
   // Delete item
-  handleDelete = item => {
+  const handleDelete = (item) => {
     axios
       .delete(`http://localhost:8000/api/tasks/${item.id}/`)
-      .then(res => this.refreshList());
+      .then((res) => refreshList());
   };
-  // handleDelete = item => {//add this after modal creation
-  //   alert("delete" + JSON.stringify(item));//add this after modal creation
-  // };
 
   // Create item
-  createItem = () => {
+  const createItem = () => {
     const item = { title: "", description: "", completed: false };
-    this.setState({ activeItem: item, modal: !this.state.modal });
+    setActiveItem(item);
+    setModal(!modal);
   };
 
   //Edit item
-  editItem = item => {
-    this.setState({ activeItem: item, modal: !this.state.modal });
+  const editItem = (item) => {
+    setActiveItem(item);
+    setModal(!modal);
   };
 
-
-  // -I- Start by visual effects to viewer
-  render() {
-    return (
-      <main className="content">
-        <h1 className="text-black text-uppercase text-center my-4">Task Manager</h1>
-        <div className="row ">
-          <div className="col-md-6 col-sm-10 mx-auto p-0">
-            <div className="card p-3">
-              <div className="">
-                <button onClick={this.createItem} className="btn btn-primary">
-                  Add task
-                    </button>
-              </div>
-              {this.renderTabList()}
-              <ul className="list-group list-group-flush">
-                {this.renderItems()}
-              </ul>
+  return (
+    <main className="content">
+      <h1 className="text-black text-uppercase text-center my-4">
+        Task Manager
+      </h1>
+      <div className="row ">
+        <div className="col-md-6 col-sm-10 mx-auto p-0">
+          <div className="card p-3">
+            <div className="">
+              <button onClick={createItem} className="btn btn-primary">
+                Add task
+              </button>
             </div>
+            {renderTabList()}
+            <ul className="list-group list-group-flush">{renderItems()}</ul>
           </div>
         </div>
-        {this.state.modal ? (
-          <Modal
-            activeItem={this.state.activeItem}
-            toggle={this.toggle}
-            onSave={this.handleSubmit}
-          />
-        ) : null}
-      </main>
-    );
-  }
-}
+      </div>
+      {modal ? (
+        <Modal
+          activeItem={activeItem}
+          setActiveItem={setActiveItem}
+          toggle={toggle}
+          onSave={handleSubmit}
+        />
+      ) : null}
+    </main>
+  );
+};
 export default App;
